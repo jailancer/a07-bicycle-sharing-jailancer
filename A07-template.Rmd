@@ -1,7 +1,7 @@
 ---
 title: "A06- ggplot"
-author: "YOUR NAME"
-date: "DATE"
+author: "Jai abhishek singh"
+date: "23rd july 2024"
 output: html_notebook
 ---
 
@@ -69,7 +69,15 @@ When you make your plot, you will likely find that the axis range is being set b
 
 ```{r}
 ### Your code here
+Trips <- Trips %>%
+  mutate(duration = as.numeric(edate - sdate) / 3600) %>% # hours
+  filter(duration < quantile(duration, 0.95)) # filter outliers
 
+ggplot(Trips, aes(x = client, y = duration)) +
+  geom_boxplot() +
+  labs(title = "Rental Duration by Client Type",
+       x = "Client Type",
+       y = "Duration (hours)")
 
 ```
 
@@ -103,46 +111,71 @@ You can use [Figure 18.3](https://dtkaplan.github.io/DataComputingEbook/project-
 
 ```{r}
 ### Your Code Here
-
+Trips %>%
+  mutate(day_of_year = yday(sdate)) %>%
+  ggplot(aes(x = day_of_year)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Bike Use by Day of the Year",
+       x = "Day of the Year",
+       y = "Density")
 ```
 
 
-My observations here..... 
+My observations :  Bike usage seems to peak around certain times of the year, potentially corresponding with weather changes or local events.
 
 
 ### Day of Week
 
 ```{r}
 ### Your Code Here
+Trips %>%
+  mutate(day_of_week = wday(sdate, label = TRUE)) %>%
+  ggplot(aes(x = day_of_week)) +
+  geom_density(fill = "green", alpha = 0.5) +
+  labs(title = "Bike Use by Day of the Week",
+       x = "Day of the Week",
+       y = "Density")
 
 ```
 
 
-My observations here..... 
-
+My observations :  Bike usage is higher on weekends, which might indicate recreational use.
 
 
 ### Hour of Day
 
 ```{r}
 ### Your Code Here
+Trips %>%
+  mutate(hour_of_day = hour(sdate)) %>%
+  ggplot(aes(x = hour_of_day)) +
+  geom_density(fill = "red", alpha = 0.5) +
+  labs(title = "Bike Use by Hour of the Day",
+       x = "Hour of the Day",
+       y = "Density")
 
 ```
 
 
-My observations here..... 
-
+My observations :There are two noticeable peaks in bike usage: one in the morning and one in the late afternoon, likely corresponding to commuting times.
 
 
 ### Minute of Hour
 
 ```{r}
 ### Your Code Here
+Trips %>%
+  mutate(minute_of_hour = minute(sdate)) %>%
+  ggplot(aes(x = minute_of_hour)) +
+  geom_density(fill = "purple", alpha = 0.5) +
+  labs(title = "Bike Use by Minute of the Hour",
+       x = "Minute of the Hour",
+       y = "Density")
 
 ```
 
 
-My observations here..... 
+My observations : Bike checkouts are fairly evenly distributed across the minute of the hour, with slight peaks at certain intervals. 
 
 
 ## Question 3: Grouping
@@ -151,10 +184,22 @@ Group the bike rentals by three variables: hour of the day, day of the week, and
 
 ```{r}
 ### My Code here
+Trips %>%
+  mutate(hour = hour(sdate),
+         day_of_week = wday(sdate, label = TRUE)) %>%
+  group_by(hour, day_of_week, client) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = hour, y = count, color = client)) +
+  geom_line() +
+  facet_wrap(~ day_of_week) +
+  labs(title = "Bike Rentals by Hour, Day of Week, and Client Type",
+       x = "Hour of the Day",
+       y = "Number of Rentals")
+
 
 ```
 
-My comments here.....
+My comments : Regular users show more consistent usage throughout the week, while casual users show a higher spike on weekends.
 
 
 ## Question 4: How Far? 
@@ -215,6 +260,31 @@ Our goal here is to recreate [Figure 18.5](https://dtkaplan.github.io/DataComput
 ```{r}
 ### My code here
 
+Trips <- Trips %>%
+  inner_join(PairDistances, by = c("sstation", "estation"))
+
+# Density plot of station-to-station distances
+ggplot(PairDistances, aes(x = distance)) +
+  geom_density(fill = "orange", alpha = 0.5) +
+  labs(title = "Density Plot of Station-to-Station Distances",
+       x = "Distance (km)",
+       y = "Density")
+
+# Density plot of ride distances
+ggplot(Trips, aes(x = distance)) +
+  geom_density(fill = "cyan", alpha = 0.5) +
+  labs(title = "Density Plot of Ride Distances",
+       x = "Distance (km)",
+       y = "Density")
+
+# Extra credit: Both densities on the same plot
+ggplot() +
+  geom_density(data = PairDistances, aes(x = distance, fill = "Station-to-Station"), alpha = 0.5) +
+  geom_density(data = Trips, aes(x = distance, fill = "Ride Distances"), alpha = 0.5) +
+  labs(title = "Density Plots of Station-to-Station and Ride Distances",
+       x = "Distance (km)",
+       y = "Density") +
+  scale_fill_manual(values = c("Station-to-Station" = "orange", "Ride Distances" = "cyan"))
 ```
 
 
@@ -224,9 +294,5 @@ Our goal here is to recreate [Figure 18.5](https://dtkaplan.github.io/DataComput
 
 Look at the variables in `Stations` and `Trips` and explain why `Simple` and `Simple2` were given different variable names for the station. 
 
-Optional Extra credit answer here.....
-
-
-
-
+Optional Extra credit answer here : Simple and Simple2 were given different variable names for the station to clearly distinguish between the start station (sstation) and the end station (estation). This is necessary for correctly calculating the distances between pairs of stations without confusion.
 
